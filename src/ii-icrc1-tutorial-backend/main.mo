@@ -12,7 +12,6 @@ import Vector "mo:vector";
 
 
 actor Blog {
-
   type Result<A, B> = Result.Result<A, B>;
   type Member = Types.Member;
   type Plan = Types.Plan;
@@ -71,19 +70,148 @@ actor Blog {
     };
   };
 
-  public shared ({ caller }) func register(member : Member) : async Result<(), Text> {
+  public shared ({ caller }) func register(name: Text, github: Text, bio: Text) : async Result<(), Text> {
     switch (members.get(caller)) {
       case (null) {
         let member = {
           name = name;
-          role = #Student;
+          bio = bio;
           github = github;
+          plan = #Free;
         };
         members.put(caller, member);
-        await Token.mint(caller, 10);
+        return #ok();
       };
       case (_) {
-        return #err("Member already exist");
+        return #err("Member already exists");
+      };
+    };
+  };
+
+  public shared ({ caller }) func createPost(title : Text, content : Text, status : PostStatus) : async Result<(), Text> {
+    switch (members.get(caller)) {
+      case (null) {
+        return #err("Member not found");
+      };
+      case (?member) {
+        switch (posts.get(caller)) {
+          case (null) {
+            posts.put(caller, Vector.new<Post>());
+          };
+          case (_) {};
+        };
+        switch (posts.get(caller)) {
+          case (null) {};
+          case (?postsObj) {
+            switch(member.plan) {
+              case (#Free) {
+                if (Vector.size<Post>(postsObj) >= 5) {
+                  return #err("Free plan is limited to 5 posts");
+                };
+              };
+              case (#Elite) {
+                if (Vector.size<Post>(postsObj) >= 50) {
+                  return #err("Elite plan is limited to 50 posts");
+                };
+              };
+              case (#Legendary) {};
+            };
+
+            if (status == #Published) {
+              Vector.add<Post>(
+                postsObj,
+                {
+                  title = title;
+                  content = content;
+                  author = caller;
+                  status = status;
+                  createdAt = Time.now();
+                  publishedAt = ?Time.now();
+                },
+              );
+            } else {
+              Vector.add<Post>(
+                postsObj,
+                {
+                  title = title;
+                  content = content;
+                  author = caller;
+                  status = status;
+                  createdAt = Time.now();
+                  publishedAt = null;
+                },
+              );
+            };
+          };
+        };
+        return #ok();
+      };
+    };
+  };
+
+  public shared ({ caller }) func updatePostStatus(id : Nat, status : PostStatus) : async Result<(), Text> {
+    switch (members.get(caller)) {
+      case (null) {
+        return #err("Member not found");
+      };
+      case (?member) {
+        switch (posts.get(caller)) {
+          case (null) {
+            return #err("Post not found");
+          };
+          case (?postsObj) {
+            if (id >= Vector.size<Post>(postsObj)) {
+              return #err("Post not found");
+            };
+            let post = Vector.get<Post>(postsObj, id);
+            let updatedPost = {
+              title = post.title;
+              content = post.content;
+              author = post.author;
+              status = status;
+              createdAt = post.createdAt;
+              publishedAt = post.publishedAt;
+            };
+            Vector.put<Post>(postsObj, id, updatedPost);
+            return #ok();
+          };
+        };
+      };
+    };
+  };
+
+  public query func getPlans() : async [Plan] {
+    [ #Free, #Elite, #Legendary ];
+  };
+
+  private func _getPlanCost(plan : Plan) : Nat {
+    switch (plan) {
+      case (#Free) {
+        0;
+      };
+      case (#Elite) {
+        10;
+      };
+      case (#Legendary) {
+        20;
+      };
+    };
+  };
+
+  private func _updatePlan(caller : Principal, plan : Plan) : async Result<(), Text> {
+    switch (members.get(caller)) {
+      case (null) {
+        return #err("Member not found");
+      };
+      case (?member) {
+        let updatedMember = {
+          name = member.name;
+          bio = member.bio;
+          github = member.github;
+          plan = plan;
+        };
+        members.put(caller, updatedMember);
+        return #ok();
       };
     };
   };

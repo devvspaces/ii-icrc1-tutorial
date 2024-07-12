@@ -3,9 +3,9 @@ import Time "mo:base/Time";
 module {
 
     public type Plan = {
-        #Free;
-        #Elite;
-        #Legendary;
+        #Free; // Limited to 5 posts
+        #Elite; // Limited to 50 posts
+        #Legendary; // Unlimited posts
     };
 
     public type Member = {
@@ -26,6 +26,7 @@ module {
         content: Text;
         author : Principal;
         status : PostStatus;
-        publishedAt : Time.Time;
+        createdAt : Time.Time;
+        publishedAt : ?Time.Time;
     };
 };
