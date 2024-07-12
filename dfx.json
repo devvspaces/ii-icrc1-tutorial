@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "ii-icrc1-tutorial-backend": {
+      "main": "src/ii-icrc1-tutorial-backend/main.mo",
+      "type": "motoko"
+    },
+    "ii-icrc1-tutorial-frontend": {
+      "dependencies": [
+        "ii-icrc1-tutorial-backend"
+      ],
+      "source": [
+        "src/ii-icrc1-tutorial-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "ii-icrc1-tutorial-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
