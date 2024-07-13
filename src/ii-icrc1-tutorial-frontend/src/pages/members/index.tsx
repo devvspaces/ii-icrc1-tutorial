@@ -29,7 +29,7 @@ export default function Page() {
           <Box>No members found</Box>
         </Center>
       )}
-      <Flex wrap={"wrap"} align={"center"} gap={6}>
+      <Flex wrap={"wrap"} alignItems={'stretch'} gap={6}>
         {members.map(([principal, member]) => (
           <MemberCard
             key={principal.toText()}

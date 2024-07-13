@@ -30,4 +30,9 @@ module {
         createdAt : Time.Time;
         publishedAt : ?Time.Time;
     };
+
+    public type PostWithAuthor = {
+        post : Post;
+        author : Member;
+    };
 };

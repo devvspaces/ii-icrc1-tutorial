@@ -4,8 +4,6 @@ import Principal "mo:base/Principal";
 import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
 import Iter "mo:base/Iter";
-import Buffer "mo:base/Buffer";
-import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Types "types";
 import Vector "mo:vector";
@@ -15,6 +13,7 @@ actor Blog {
   type Member = Types.Member;
   type Plan = Types.Plan;
   type Post = Types.Post;
+  type PostWithAuthor = Types.PostWithAuthor;
   type PostStatus = Types.PostStatus;
   type Vector<T> = Vector.Vector<T>;
 
@@ -26,6 +25,16 @@ actor Blog {
 
   stable var stablePosts : [(Principal, Vector<Post>)] = [];
   let posts = HashMap.fromIter<Principal, Vector<Post>>(stablePosts.vals(), 0, Principal.equal, Principal.hash);
+
+  system func preupgrade() {
+    stableMembers := Iter.toArray(members.entries());
+    stablePosts := Iter.toArray(posts.entries());
+  };
+
+  system func postupgrade() {
+    stableMembers := [];
+    stablePosts := [];
+  };
 
   public query func getName() : async Text {
     return name;
@@ -39,12 +48,25 @@ actor Blog {
     Iter.toArray(members.entries());
   };
 
-  public query func getPosts() : async [Post] {
-    let vec = Vector.new<Post>();
-    for (post in posts.vals()) {
-      Vector.addFromIter<Post>(vec, Vector.vals<Post>(post));
+  public query func getPosts() : async [PostWithAuthor] {
+    let vec = Vector.new<PostWithAuthor>();
+    for ((principal, userPosts) in posts.entries()) {
+      switch (members.get(principal)) {
+        case (null) {};
+        case (?member) {
+          for (post in Vector.vals(userPosts)) {
+            Vector.add<PostWithAuthor>(
+              vec,
+              {
+                post = post;
+                author = member;
+              },
+            );
+          };
+        };
+      };
     };
-    Vector.toArray<Post>(vec);
+    Vector.toArray(vec);
   };
 
   public query func getMemberProfile(p : Principal) : async Result<Member, Text> {

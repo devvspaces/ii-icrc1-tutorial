@@ -84,7 +84,7 @@ export default function PostCard({
               {title}
             </Heading>
             <Text color={"gray.500"}>
-              <Markdown remarkPlugins={[remarkGfm]}>
+              <Markdown className={'markdown'} remarkPlugins={[remarkGfm]}>
                 {description.substring(0, 200) + "..."}
               </Markdown>
             </Text>

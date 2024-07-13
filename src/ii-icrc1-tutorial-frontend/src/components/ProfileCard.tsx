@@ -30,13 +30,13 @@ export default function ProfileCard({ name, bio, github, plan }: Props) {
       <Stack
         borderWidth="1px"
         borderRadius="lg"
-        w={{ sm: "100%", md: "540px" }}
-        height={{ sm: "476px", md: "20rem" }}
+        w={{ sm: "100%", md: "740px" }}
         direction={{ base: "column", md: "row" }}
         bg={bg}
         boxShadow={"2xl"}
         padding={4}
         pos={"relative"}
+        align={'center'}
       >
         <Tag
           size={"sm"}
@@ -50,7 +50,7 @@ export default function ProfileCard({ name, bio, github, plan }: Props) {
         >
           {plan}
         </Tag>
-        <Flex flex={1} bg="blue.200">
+        <Flex bg="blue.200" height={"300px"} overflow={'hidden'} rounded={'md'} width={'300px'}>
           <Image
             objectFit="cover"
             boxSize="100%"
@@ -109,6 +109,8 @@ export default function ProfileCard({ name, bio, github, plan }: Props) {
               as={"a"}
               target={"_blank"}
               href={github}
+              maxW={"200px"}
+              mx={'auto'}
             >
               Github
             </Button>
