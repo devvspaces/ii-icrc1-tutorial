@@ -1,36 +1,11 @@
-import {
-  Avatar,
-  Box,
-  Card,
-  CardBody,
-  CardHeader,
-  Center,
-  Flex,
-  Heading,
-  Image,
-  Stack,
-  Text,
-  Table,
-  Thead,
-  Tbody,
-  Tfoot,
-  Tr,
-  Th,
-  Td,
-  TableCaption,
-  TableContainer,
-  Spacer,
-} from "@chakra-ui/react";
-import { useAuth } from "../../lib/AuthContext";
-import { useEffect, useState } from "react";
+import { Box, Flex, Spacer } from "@chakra-ui/react";
 import { Principal } from "@dfinity/principal";
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigation,
-} from "react-router-dom";
+import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
-import { Member } from "../../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import {
+  Member,
+  Post,
+} from "../../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { getPlan } from "../../helpers/auth";
 import ProfileCard from "../../components/ProfileCard";
 import PostCard from "../../components/PostCard";
@@ -38,17 +13,29 @@ import PostCard from "../../components/PostCard";
 const actor = ii_icrc1_tutorial_backend;
 
 export async function memberLoader({ params }: LoaderFunctionArgs) {
-  const response = await actor.getMemberProfile(Principal.fromText(params.id as string)) as { ok: Member };
+  const principal = Principal.fromText(params.id!!);
+  const response = (await actor.getMemberProfile(principal)) as { ok: Member };
+  if (!response.ok) {
+    throw new Error("Member not found");
+  }
+  const posts = (await ii_icrc1_tutorial_backend.getMemberPosts(principal)) as {
+    ok: Post[];
+  };
+  if (!posts.ok) {
+    throw new Error("Error loading posts");
+  }
   return {
     member: response.ok,
     principal: params.id,
+    posts: posts.ok,
   };
 }
 
 export default function SingleMemberPage() {
-  const { member, principal } = useLoaderData() as {
+  const { member, principal, posts } = useLoaderData() as {
     member: Member;
     principal: string;
+    posts: Post[];
   };
   return (
     <Box>
@@ -62,56 +49,17 @@ export default function SingleMemberPage() {
       <Spacer mb={6} />
 
       <Flex wrap={"wrap"} align={"center"} justify={"center"} gap={6}>
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
+        {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            author={{
+              name: member.name,
+            }}
+            date={post.createdAt.toString()}
+            title={post.title}
+            description={post.content}
+          />
+        ))}
       </Flex>
     </Box>
   );

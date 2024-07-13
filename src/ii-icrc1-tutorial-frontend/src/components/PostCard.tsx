@@ -11,6 +11,9 @@ import {
 } from "@chakra-ui/react";
 import { PostStatus } from "../helpers/types";
 import moment from "moment";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { nano2mill } from "../helpers/string";
 
 interface Props {
   title: string;
@@ -30,6 +33,7 @@ export default function PostCard({
   status,
 }: Props) {
   const bg = useColorModeValue("white", "gray.900");
+  const headingColor = useColorModeValue("gray.700", "white");
   return (
     <Center>
       <Box
@@ -70,15 +74,14 @@ export default function PostCard({
         </Box>
         <Stack px={6} pt={6}>
           <Heading
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            color={useColorModeValue("gray.700", "white")}
+            color={headingColor}
             fontSize={"2xl"}
             fontFamily={"body"}
           >
             {title}
           </Heading>
           <Text color={"gray.500"}>
-            {description}
+            <Markdown remarkPlugins={[remarkGfm]}>{description.substring(0, 200) + "..."}</Markdown>
           </Text>
         </Stack>
         <Stack
@@ -94,7 +97,7 @@ export default function PostCard({
           />
           <Stack direction={"column"} spacing={0} fontSize={"sm"}>
             <Text fontWeight={600}>{author.name}</Text>
-            <Text color={"gray.500"}>{moment(date).fromNow()}</Text>
+            <Text color={"gray.500"}>{moment(nano2mill(date)).fromNow()}</Text>
           </Stack>
         </Stack>
       </Box>

@@ -1,62 +1,44 @@
-import { Box, Center, Flex, Heading, Text } from "@chakra-ui/react";
+import { Box, Center, CircularProgress, Flex, useToast } from "@chakra-ui/react";
 import PostCard from "../components/PostCard";
+import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
+import { useEffect, useState } from "react";
+import { Post } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 
 export default function Page() {
+  const toast = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  useEffect(() => {
+    async function fetchPosts() {
+      setIsLoading(true);
+      const posts = (await ii_icrc1_tutorial_backend.getPosts()) as Post[];
+      setIsLoading(false);
+      setPosts(posts);
+    }
+    fetchPosts();
+  }, []);
+
   return (
     <Box>
-      
-
+    {
+      isLoading && (
+       <Center>
+         <CircularProgress isIndeterminate color="blue.300" />
+       </Center>
+      )
+    }
       <Flex wrap={"wrap"} align={"center"} justify={"center"} gap={6}>
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
-        <PostCard
-          author={{
-            name: "Achim Rolle",
-          }}
-          date={"2021-09-01"}
-          title={"Boost your conversion rate"}
-          description={
-            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
-          }
-        />
+          {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            author={{
+              name: 'pending',
+            }}
+            date={post.createdAt.toString()}
+            title={post.title}
+            description={post.content}
+          />
+        ))}
       </Flex>
     </Box>
   );

@@ -9,9 +9,13 @@ import {
   Input,
   Select,
   useToast,
+  FormErrorMessage,
 } from "@chakra-ui/react";
-import { useState } from "react";
-import { Member, Post } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import { useEffect, useState } from "react";
+import {
+  Member,
+  Post,
+} from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { FaSave } from "react-icons/fa";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -22,6 +26,7 @@ import { createBackendActor, createClient } from "../helpers/auth";
 import withAuth from "../lib/withAuth";
 import { useAuth } from "../lib/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { PostStatus } from "../helpers/types";
 
 function NewPost() {
   const { colorMode } = useColorMode();
@@ -34,13 +39,17 @@ function NewPost() {
   const formik = useFormik({
     initialValues: {
       title: "",
-      content: "**Hello world!!!**",
+      content: "",
       status: "Published",
     },
     validationSchema: Yup.object({
-      name: Yup.string().required().min(3),
-      github: Yup.string().required().url(),
-      bio: Yup.string().required().min(10),
+      title: Yup.string().required().min(10),
+      content: Yup.string().required().min(100),
+      status: Yup.string().required().oneOf([
+        PostStatus.Draft.toString(),
+        PostStatus.Published.toString(),
+        PostStatus.Archived.toString(),
+      ]),
     }),
     onSubmit: async (values, { setFieldError }) => {
       try {
@@ -48,13 +57,11 @@ function NewPost() {
         const authClient = await createClient();
         const identity = authClient.getIdentity();
         const actor = await createBackendActor(identity);
-        console.log("identity", identity.getPrincipal());
-        console.log("actor", actor);
         const response = (await actor.createPost(
           values.title,
           values.content,
-          values.status
-        )) as { ok: Post, err: string }
+          { [values.status]: null }
+        )) as { ok: Post; err: string };
         setIsLoading(false);
         if (response.ok !== undefined) {
           toast({
@@ -64,7 +71,12 @@ function NewPost() {
             duration: 3000,
             position: "top",
           });
-          // navigate(`/posts/${state.user?.principal.toText()}/${response.ok.id}`);
+          navigate(
+            `/account`
+          );
+          // navigate(
+          //   `/posts/${state.user?.principal.toText()}/${response.ok.id}`
+          // );
         } else {
           toast({
             title: "An error occurred.",
@@ -80,7 +92,7 @@ function NewPost() {
         setIsLoading(false);
         toast({
           title: "An error occurred.",
-          description: "An error occurred while trying to create your account.",
+          description: "An error occurred while trying to create post",
           status: "error",
           duration: 5000,
           isClosable: true,
@@ -90,42 +102,84 @@ function NewPost() {
     },
   });
 
+  useEffect(() => {
+    formik.setFieldValue("content", value);
+  }, [value])
+
   return (
     <Box>
-      <HStack justify="space-between" mb={4}>
-        <Heading size="lg">Create new post</Heading>
-        <Button colorScheme="blue" leftIcon={<FaSave />}>
-          Save
-        </Button>
-      </HStack>
+      <form onSubmit={formik.handleSubmit}>
+        <HStack justify="space-between" mb={4}>
+          <Heading size="lg">Create new post</Heading>
+          <Button
+            colorScheme="blue"
+            leftIcon={<FaSave />}
+            type="submit"
+            isLoading={isLoading}
+          >
+            Save
+          </Button>
+        </HStack>
 
-      <HStack mb={6}>
-        <FormControl id="title" isRequired>
-          <FormLabel>Title</FormLabel>
-          <Input type="text" />
-        </FormControl>
-        <FormControl id="title" isRequired>
-          <FormLabel>Status</FormLabel>
-          <Select>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </Select>
-        </FormControl>
-      </HStack>
+        <HStack mb={6}>
+          <FormControl
+            id="title"
+            isRequired
+            isInvalid={!!formik.errors.title && formik.touched.title}
+          >
+            <FormLabel>Title</FormLabel>
+            <Input
+              type="text"
+              value={formik.values.title}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+            <FormErrorMessage>{formik.errors.title}</FormErrorMessage>
+          </FormControl>
+          <FormControl
+            id="title"
+            isRequired
+            isInvalid={!!formik.errors.status && formik.touched.status}
+          >
+            <FormLabel>Status</FormLabel>
+            <Select
+              value={formik.values.status}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              name="status"
+            >
+              <option value={PostStatus.Draft.toString()}>Draft</option>
+              <option value={PostStatus.Published.toString()}>Published</option>
+              <option value={PostStatus.Archived.toString()}>Archived</option>
+            </Select>
+            <FormErrorMessage>{formik.errors.status}</FormErrorMessage>
+          </FormControl>
+        </HStack>
 
-      <FormControl id="title" isRequired>
-        <FormLabel>Content</FormLabel>
-        <div data-color-mode={colorMode}>
-          <MDEditor
-            height={"calc(100vh - 300px)"}
-            value={value}
-            onChange={(value) => {
-              setValue(value || "");
-            }}
-          />
-        </div>
-      </FormControl>
+        <FormControl
+          id="content"
+          isRequired
+          isInvalid={!!formik.errors.content && formik.touched.content}
+        >
+          <FormLabel>Content</FormLabel>
+          <div data-color-mode={colorMode}>
+            <MDEditor
+              height={"calc(100vh - 300px)"}
+              value={value}
+              id="content"
+              onChange={(value, e) => {
+                setValue(value || "");
+              }}
+              textareaProps={{
+                id: "content",
+                name: "content",
+              }}
+              onBlur={formik.handleBlur}
+            />
+          </div>
+          <FormErrorMessage>{formik.errors.content}</FormErrorMessage>
+        </FormControl>
+      </form>
     </Box>
   );
 }

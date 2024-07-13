@@ -1,4 +1,4 @@
-import { Box, Center, Flex, Heading, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
 import { createBackendActor, createClient } from "../../helpers/auth";
@@ -10,7 +10,7 @@ let actor = ii_icrc1_tutorial_backend;
 
 export async function membersLoader({ request }: LoaderFunctionArgs) {
   const client = await createClient();
-  const identity = client.getIdentity()
+  const identity = client.getIdentity();
   actor = await createBackendActor(identity);
   let members = await actor.getMembers();
   return {
@@ -24,16 +24,14 @@ export default function Page() {
   };
   return (
     <Box>
-      <Flex
-        wrap={"wrap"}
-        align={"center"}
-        gap={6}
-      >
-        {
-          members.map(([principal, member]) => (
-            <MemberCard key={principal.toText()} principal={principal} member={member} />
-          ))
-        }
+      <Flex wrap={"wrap"} align={"center"} gap={6}>
+        {members.map(([principal, member]) => (
+          <MemberCard
+            key={principal.toText()}
+            principal={principal}
+            member={member}
+          />
+        ))}
       </Flex>
     </Box>
   );

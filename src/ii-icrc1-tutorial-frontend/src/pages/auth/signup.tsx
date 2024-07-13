@@ -62,8 +62,6 @@ export default function Page() {
         });
         const identity = authClient.getIdentity();
         actor = await createBackendActor(identity);
-        console.log("identity", identity.getPrincipal());
-        console.log("actor", actor);
         const response = (await actor.register(
           values.name,
           values.github,
