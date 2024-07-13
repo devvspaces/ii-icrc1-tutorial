@@ -1,6 +1,7 @@
 import App from './pages/index';
 import MembersPage, { membersLoader } from './pages/members';
 import CreatePostPage from './pages/new';
+import PostPage, { postLoader } from './pages/post';
 import MemberDetailPage, { memberLoader } from './pages/members/detail';
 import SignUp from './pages/auth/signup';
 import SettingsPage from './pages/billing';
@@ -26,6 +27,11 @@ const router = createBrowserRouter([
       {
         path: 'new/post',
         element: <CreatePostPage />,
+      },
+      {
+        path: 'posts/:owner/:id',
+        element: <PostPage />,
+        loader: postLoader,
       },
       {
         path: 'settings',

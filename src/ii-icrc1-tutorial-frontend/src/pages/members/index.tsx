@@ -1,4 +1,4 @@
-import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { Box, Center, Flex, Heading, Text } from "@chakra-ui/react";
 import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
 import { createBackendActor, createClient } from "../../helpers/auth";
@@ -24,6 +24,11 @@ export default function Page() {
   };
   return (
     <Box>
+      {members.length === 0 && (
+        <Center>
+          <Box>No members found</Box>
+        </Center>
+      )}
       <Flex wrap={"wrap"} align={"center"} gap={6}>
         {members.map(([principal, member]) => (
           <MemberCard

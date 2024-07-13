@@ -7,6 +7,7 @@ import {
   Button,
   useToast,
   CircularProgress,
+  Center,
 } from "@chakra-ui/react";
 import { useAuth } from "../lib/AuthContext";
 import { Link } from "react-router-dom";
@@ -77,16 +78,19 @@ function ProfilePage() {
         </Button>
       </HStack>
 
-      {
-        isLoading && (
-          <CircularProgress isIndeterminate color="blue.300" />
-        )
-      }
+      {isLoading && <CircularProgress isIndeterminate color="blue.300" />}
+      {posts.length === 0 && !isLoading && (
+        <Center>
+          <Box>No posts found</Box>
+        </Center>
+      )}
 
       <Flex wrap={"wrap"} align={"center"} gap={6}>
         {posts.map((post) => (
           <PostCard
             key={post.id}
+            id={post.id.toString()}
+            owner={post.author}
             author={{
               name: member.name,
             }}

@@ -14,6 +14,10 @@ import {
   Button,
 } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
+import withAuth from "../lib/withAuth";
+import { useAuth } from "../lib/AuthContext";
+import { getPlan } from "../helpers/auth";
+import { Plan } from "../helpers/types";
 
 interface Props {
   children: React.ReactNode;
@@ -36,7 +40,15 @@ function PriceWrapper(props: Props) {
   );
 }
 
-export default function Page() {
+function Page() {
+  const { state } = useAuth();
+
+  const plan = getPlan(state.user?.member!!)!!;
+
+  const isFree = plan === Plan.Free;
+  const isElite = plan === Plan.Elite;
+  const isLegendary = plan === Plan.Legendary;
+
   return (
     <Box py={12}>
       <VStack spacing={2} textAlign="center">
@@ -88,8 +100,8 @@ export default function Page() {
               </ListItem>
             </List>
             <Box w="80%" pt={7}>
-              <Button w="full" colorScheme="blue" variant="outline" isDisabled>
-                Current Plan
+              <Button w="full" colorScheme="blue" variant="outline" isDisabled={isFree}>
+                {isFree ? "Current Plan" : "-"}
               </Button>
             </Box>
           </VStack>
@@ -149,8 +161,8 @@ export default function Page() {
                 </ListItem>
               </List>
               <Box w="80%" pt={7}>
-                <Button w="full" colorScheme="blue">
-                  Upgrade
+                <Button w="full" colorScheme="blue" isDisabled={isElite}>
+                {isElite ? "Current Plan" : (isLegendary ? "-" : "Upgrade")}
                 </Button>
               </Box>
             </VStack>
@@ -190,8 +202,8 @@ export default function Page() {
               </ListItem>
             </List>
             <Box w="80%" pt={7}>
-              <Button w="full" colorScheme="blue" variant="outline">
-                Upgrade
+              <Button w="full" colorScheme="blue" variant="outline" isDisabled={isLegendary}>
+                {isLegendary ? "Current Plan" : "Upgrade"}
               </Button>
             </Box>
           </VStack>
@@ -200,3 +212,7 @@ export default function Page() {
     </Box>
   );
 }
+
+const Billing = withAuth(Page);
+
+export default Billing;

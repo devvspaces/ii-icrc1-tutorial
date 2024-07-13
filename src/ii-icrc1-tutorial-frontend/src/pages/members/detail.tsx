@@ -1,4 +1,4 @@
-import { Box, Flex, Spacer } from "@chakra-ui/react";
+import { Box, Center, Flex, Spacer } from "@chakra-ui/react";
 import { Principal } from "@dfinity/principal";
 import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
@@ -47,11 +47,18 @@ export default function SingleMemberPage() {
       />
 
       <Spacer mb={6} />
+      {posts.length === 0 && (
+        <Center>
+          <Box>No posts found</Box>
+        </Center>
+      )}
 
       <Flex wrap={"wrap"} align={"center"} justify={"center"} gap={6}>
         {posts.map((post) => (
           <PostCard
             key={post.id}
+            id={post.id.toString()}
+            owner={post.author}
             author={{
               name: member.name,
             }}
