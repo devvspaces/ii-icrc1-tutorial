@@ -15,12 +15,106 @@ import {
   Text,
   useColorModeValue,
   Textarea,
+  useToast,
+  FormErrorMessage,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
+import { createBackendActor, createClient } from "../../helpers/auth";
+import { Member } from "../../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import { LOGIN, useAuth } from "../../lib/AuthContext";
+
+let actor = ii_icrc1_tutorial_backend;
 
 export default function Page() {
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
+  const navigate = useNavigate();
+  const { dispatch } = useAuth();
+
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      github: "",
+      bio: "",
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required().min(3),
+      github: Yup.string().required().url(),
+      bio: Yup.string().required().min(10),
+    }),
+    onSubmit: async (values, { setFieldError }) => {
+      try {
+        setIsLoading(true);
+        const authClient = await createClient();
+        await new Promise((resolve) => {
+          authClient.login({
+            identityProvider:
+              process.env.DFX_NETWORK === "ic"
+                ? "https://identity.ic0.app"
+                : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`,
+            onSuccess: () => resolve(null),
+          });
+        });
+        const identity = authClient.getIdentity();
+        actor = await createBackendActor(identity);
+        console.log("identity", identity.getPrincipal());
+        console.log("actor", actor);
+        const response = (await actor.register(
+          values.name,
+          values.github,
+          values.bio
+        )) as any;
+        setIsLoading(false);
+        if (response.ok !== undefined) {
+          toast({
+            title: "Success.",
+            description: "Your account has been created successfully.",
+            status: "success",
+            duration: 3000,
+            position: "top",
+          });
+          const response = (await actor.getMemberProfile(
+            identity.getPrincipal()
+          ));
+          const member = (response.ok as Member) ?? null;
+          dispatch({
+            type: LOGIN,
+            payload: {
+              principal: identity.getPrincipal(),
+              member,
+            },
+          });
+          navigate("/");
+        } else {
+          toast({
+            title: "An error occurred.",
+            description: response.err,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+            position: "top",
+          });
+        }
+      } catch (e: unknown) {
+        console.error(e);
+        setIsLoading(false);
+        toast({
+          title: "An error occurred.",
+          description: "An error occurred while trying to create your account.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+      }
+    },
+  });
+
   return (
     <Flex align={"center"} justify={"center"}>
       <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
@@ -38,38 +132,75 @@ export default function Page() {
           boxShadow={"lg"}
           p={8}
         >
-          <Stack spacing={4} w={'400px'}>
-            <FormControl id="firstName" isRequired>
-              <FormLabel>Name</FormLabel>
-              <Input type="text" />
-            </FormControl>
-            <FormControl id="email" isRequired>
-              <FormLabel>Github</FormLabel>
-              <Input type="email" />
-            </FormControl>
-            <FormControl id="bio" isRequired>
-              <FormLabel>Bio</FormLabel>
-              <Textarea rows={4} />
-            </FormControl>
-            <Stack spacing={10} pt={2}>
-              <Button
-                loadingText="Submitting"
-                size="lg"
-                bg={"blue.400"}
-                color={"white"}
-                _hover={{
-                  bg: "blue.500",
-                }}
+          <form onSubmit={formik.handleSubmit}>
+            <Stack spacing={4} w={"400px"}>
+              <FormControl
+                id="name"
+                isRequired
+                isInvalid={!!formik.errors.name && formik.touched.name}
               >
-                Sign up
-              </Button>
+                <FormLabel>Name</FormLabel>
+                <Input
+                  type="text"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                <FormErrorMessage>{formik.errors.name}</FormErrorMessage>
+              </FormControl>
+              <FormControl
+                id="github"
+                isRequired
+                isInvalid={!!formik.errors.github && formik.touched.github}
+              >
+                <FormLabel>Github</FormLabel>
+                <Input
+                  type="url"
+                  value={formik.values.github}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                <FormErrorMessage>{formik.errors.github}</FormErrorMessage>
+              </FormControl>
+              <FormControl
+                id="bio"
+                isRequired
+                isInvalid={!!formik.errors.bio && formik.touched.bio}
+              >
+                <FormLabel>Bio</FormLabel>
+                <Textarea
+                  rows={4}
+                  value={formik.values.bio}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                <FormErrorMessage>{formik.errors.bio}</FormErrorMessage>
+              </FormControl>
+              <Stack spacing={10} pt={2}>
+                <Button
+                  isLoading={isLoading}
+                  loadingText="Submitting"
+                  size="lg"
+                  bg={"blue.400"}
+                  color={"white"}
+                  _hover={{
+                    bg: "blue.500",
+                  }}
+                  type="submit"
+                >
+                  Sign up
+                </Button>
+              </Stack>
+              <Stack pt={6}>
+                <Text align={"center"}>
+                  Already a user?{" "}
+                  <Link to={"/"} color={"blue.400"}>
+                    Login
+                  </Link>
+                </Text>
+              </Stack>
             </Stack>
-            <Stack pt={6}>
-              <Text align={"center"}>
-                Already a user? <Link to={'/'} color={"blue.400"}>Login</Link>
-              </Text>
-            </Stack>
-          </Stack>
+          </form>
         </Box>
       </Stack>
     </Flex>

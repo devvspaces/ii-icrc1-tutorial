@@ -9,9 +9,17 @@ import {
   Badge,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { Principal } from "@dfinity/principal";
 import { Link } from "react-router-dom";
+import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import { extractGithubUsername } from "../helpers/string";
 
-export default function Member() {
+interface MemberProps {
+  principal: Principal;
+  member: Member
+}
+
+export default function Component({ principal, member }: MemberProps) {
   const bg = useColorModeValue("white", "gray.900");
   return (
     <Center>
@@ -44,17 +52,17 @@ export default function Member() {
           }}
         />
         <Heading fontSize={"2xl"} fontFamily={"body"}>
-          Lindsey James
+          {member.name}
         </Heading>
         <Text fontWeight={600} color={"gray.500"} mb={4}>
-          @lindsey_jam3s
+          @{extractGithubUsername(member.github)}
         </Text>
         <Text
           textAlign={"center"}
           color={useColorModeValue("gray.700", "gray.400")}
           px={3}
         >
-          Actress, musician, songwriter and artist. PM for work inquires or ...
+          {member.bio.substring(0, 100)}{member.bio.length > 100 ? "..." : ""}
         </Text>
         <Stack mt={8} direction={"row"} spacing={4}>
           <Button
@@ -66,7 +74,7 @@ export default function Member() {
             }}
             as={Link}
             target={"_blank"}
-            to={"https://github.com/devvspaces"}
+            to={member.github}
           >
             Github
           </Button>
@@ -86,7 +94,7 @@ export default function Member() {
               bg: "blue.500",
             }}
             as={Link}
-            to={"/members/1"}
+            to={`/members/${principal.toText()}`}
           >
             View
           </Button>

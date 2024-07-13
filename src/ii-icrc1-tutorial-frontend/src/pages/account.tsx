@@ -1,68 +1,28 @@
 import {
-  Avatar,
   Box,
-  Card,
-  CardBody,
-  CardHeader,
-  Center,
   Flex,
   Heading,
-  Image,
-  Stack,
-  Text,
-  Table,
-  Thead,
-  Tbody,
-  Tfoot,
-  Tr,
-  Th,
-  Td,
-  TableCaption,
-  TableContainer,
   Spacer,
   HStack,
   Button,
 } from "@chakra-ui/react";
 import { useAuth } from "../lib/AuthContext";
-import { useEffect, useState } from "react";
-import { Principal } from "@dfinity/principal";
 import {
   Link,
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigation,
 } from "react-router-dom";
-import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
-import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { getPlan } from "../helpers/auth";
 import ProfileCard from "../components/ProfileCard";
 import PostCard from "../components/PostCard";
 import { FaPlus } from "react-icons/fa";
 import { PostStatus } from "../helpers/types";
+import withAuth from "../lib/withAuth";
 
-const actor = ii_icrc1_tutorial_backend;
+function ProfilePage() {
 
-export async function profileLoader({ params }: LoaderFunctionArgs) {
-  // const member = await actor.getMember(Principal.fromText(params.id as string)) as { ok: Member };
-  // const submissions = await dao.getSubmissions(params.id as string);
-  // const balance = await token.balanceOf(Principal.fromText(params.id as string));
-  // const tokenSymbol = await token.tokenSymbol();
-  return {
-    member: {
-      name: "John Doe",
-      github: "https://github.com/devvspaces",
-      bio: "Actor, musician, songwriter and artist. PM for work inquires or ...",
-      plan: { Legendary: null },
-    },
-    principal: "test",
-  };
-}
+  const { state } = useAuth();
 
-export default function ProfilePage() {
-  const { member, principal } = useLoaderData() as {
-    member: Member;
-    principal: string;
-  };
+  const member = state.user?.member!!;
+  
   return (
     <Box>
       <ProfileCard
@@ -141,3 +101,7 @@ export default function ProfilePage() {
     </Box>
   );
 }
+
+const Page = withAuth(ProfilePage);
+
+export default Page;

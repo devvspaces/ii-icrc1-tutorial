@@ -22,6 +22,7 @@ module {
     };
 
     public type Post = {
+        id: Nat;
         title : Text;
         content: Text;
         author : Principal;

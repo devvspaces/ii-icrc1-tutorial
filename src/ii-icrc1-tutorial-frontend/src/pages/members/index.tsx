@@ -1,7 +1,27 @@
 import { Box, Center, Flex, Heading, Text } from "@chakra-ui/react";
-import Member from "../../components/Member";
+import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
+import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
+import { createBackendActor, createClient } from "../../helpers/auth";
+import { Principal } from "@dfinity/principal";
+import { Member } from "../../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import MemberCard from "../../components/Member";
+
+let actor = ii_icrc1_tutorial_backend;
+
+export async function membersLoader({ request }: LoaderFunctionArgs) {
+  const client = await createClient();
+  const identity = client.getIdentity()
+  actor = await createBackendActor(identity);
+  let members = await actor.getMembers();
+  return {
+    members,
+  };
+}
 
 export default function Page() {
+  const { members } = useLoaderData() as {
+    members: [Principal, Member][];
+  };
   return (
     <Box>
       <Flex
@@ -9,11 +29,11 @@ export default function Page() {
         align={"center"}
         gap={6}
       >
-        <Member />
-        <Member />
-        <Member />
-        <Member />
-        <Member />
+        {
+          members.map(([principal, member]) => (
+            <MemberCard key={principal.toText()} principal={principal} member={member} />
+          ))
+        }
       </Flex>
     </Box>
   );

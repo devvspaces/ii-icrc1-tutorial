@@ -1,25 +1,6 @@
 import {
-  Avatar,
   Box,
-  Card,
-  CardBody,
-  CardHeader,
-  Center,
-  Flex,
   Heading,
-  Image,
-  Stack,
-  Text,
-  Table,
-  Thead,
-  Tbody,
-  Tfoot,
-  Tr,
-  Th,
-  Td,
-  TableCaption,
-  TableContainer,
-  Spacer,
   HStack,
   Button,
   useColorMode,
@@ -27,33 +8,87 @@ import {
   FormLabel,
   Input,
   Select,
+  useToast,
 } from "@chakra-ui/react";
-import { useAuth } from "../lib/AuthContext";
-import { useEffect, useState } from "react";
-import { Principal } from "@dfinity/principal";
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigation,
-} from "react-router-dom";
-import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
-import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
-import { getPlan } from "../helpers/auth";
-import ProfileCard from "../components/ProfileCard";
-import PostCard from "../components/PostCard";
-import { FaPlus, FaSave } from "react-icons/fa";
-import { PostStatus } from "../helpers/types";
+import { useState } from "react";
+import { Member, Post } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import { FaSave } from "react-icons/fa";
 import MDEditor from "@uiw/react-md-editor";
-// No import is required in the WebPack.
 import "@uiw/react-md-editor/markdown-editor.css";
-// No import is required in the WebPack.
 import "@uiw/react-markdown-preview/markdown.css";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { createBackendActor, createClient } from "../helpers/auth";
+import withAuth from "../lib/withAuth";
+import { useAuth } from "../lib/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-const actor = ii_icrc1_tutorial_backend;
-
-export default function NewPost() {
+function NewPost() {
   const { colorMode } = useColorMode();
   const [value, setValue] = useState("**Hello world!!!**");
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
+  const { state } = useAuth();
+  const navigate = useNavigate();
+
+  const formik = useFormik({
+    initialValues: {
+      title: "",
+      content: "**Hello world!!!**",
+      status: "Published",
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required().min(3),
+      github: Yup.string().required().url(),
+      bio: Yup.string().required().min(10),
+    }),
+    onSubmit: async (values, { setFieldError }) => {
+      try {
+        setIsLoading(true);
+        const authClient = await createClient();
+        const identity = authClient.getIdentity();
+        const actor = await createBackendActor(identity);
+        console.log("identity", identity.getPrincipal());
+        console.log("actor", actor);
+        const response = (await actor.createPost(
+          values.title,
+          values.content,
+          values.status
+        )) as { ok: Post, err: string }
+        setIsLoading(false);
+        if (response.ok !== undefined) {
+          toast({
+            title: "Success.",
+            description: "New post created successfully.",
+            status: "success",
+            duration: 3000,
+            position: "top",
+          });
+          // navigate(`/posts/${state.user?.principal.toText()}/${response.ok.id}`);
+        } else {
+          toast({
+            title: "An error occurred.",
+            description: response.err,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+            position: "top",
+          });
+        }
+      } catch (e: unknown) {
+        console.error(e);
+        setIsLoading(false);
+        toast({
+          title: "An error occurred.",
+          description: "An error occurred while trying to create your account.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+      }
+    },
+  });
 
   return (
     <Box>
@@ -94,3 +129,7 @@ export default function NewPost() {
     </Box>
   );
 }
+
+const Page = withAuth(NewPost);
+
+export default Page;

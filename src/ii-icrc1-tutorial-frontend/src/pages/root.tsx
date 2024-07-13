@@ -21,6 +21,8 @@ import {
   MenuList,
   Button,
   useColorMode,
+  useToast,
+  Stack,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -48,8 +50,15 @@ import {
   createActor,
   ii_icrc1_tutorial_backend,
 } from "../../../declarations/ii-icrc1-tutorial-backend";
-import { useAuth } from "../lib/AuthContext";
+import { LOGIN, LOGOUT, useAuth } from "../lib/AuthContext";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import {
+  createBackendActor,
+  createClient,
+  getPlan,
+  refreshIdentity,
+} from "../helpers/auth";
+import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 
 let actor = ii_icrc1_tutorial_backend;
 
@@ -67,6 +76,7 @@ interface NavItemProps extends FlexProps {
 
 interface MobileProps extends FlexProps {
   onOpen: () => void;
+  login: () => void;
 }
 
 interface SidebarProps extends BoxProps {
@@ -112,11 +122,13 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
-      {LinkItems.map((link) => (
-        <NavItem key={link.name} icon={link.icon} link={link.link}>
-          {link.name}
-        </NavItem>
-      ))}
+      <Stack>
+        {LinkItems.map((link) => (
+          <NavItem key={link.name} icon={link.icon} link={link.link}>
+            {link.name}
+          </NavItem>
+        ))}
+      </Stack>
     </Box>
   );
 };
@@ -129,12 +141,7 @@ const NavItem = ({ icon, link, children, ...rest }: NavItemProps) => {
       : location?.pathname.includes(link);
   return (
     <Link to={link}>
-      <Box
-        as="a"
-        href="#"
-        style={{ textDecoration: "none" }}
-        _focus={{ boxShadow: "none" }}
-      >
+      <Box style={{ textDecoration: "none" }} _focus={{ boxShadow: "none" }}>
         <Flex
           align="center"
           p="4"
@@ -142,11 +149,12 @@ const NavItem = ({ icon, link, children, ...rest }: NavItemProps) => {
           borderRadius="lg"
           role="group"
           cursor="pointer"
+          transition=".3s ease"
           _hover={{
-            bg: "cyan.400",
+            bg: "blue.400",
             color: "white",
           }}
-          bg={isActive ? "cyan.400" : undefined}
+          bg={isActive ? "blue.400" : undefined}
           color={isActive ? "white" : undefined}
           {...rest}
         >
@@ -167,9 +175,31 @@ const NavItem = ({ icon, link, children, ...rest }: NavItemProps) => {
   );
 };
 
-const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
-  const { state } = useAuth();
+const MobileNav = ({ onOpen, login, ...rest }: MobileProps) => {
+  const { state, dispatch } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
+  const navigate = useNavigate();
+
+  const menuBg = useColorModeValue("white", "gray.900");
+  const menuBc = useColorModeValue("gray.200", "gray.700");
+
+  const toast = useToast();
+
+  async function logout() {
+    dispatch({
+      type: LOGOUT,
+    });
+    const authClient = await createClient();
+    authClient.logout();
+    toast({
+      title: "You have been logged out",
+      status: "success",
+      duration: 5000,
+      isClosable: true,
+    });
+    navigate("/");
+  }
+
   return (
     <Flex
       ml={{ base: 0, md: 60 }}
@@ -207,14 +237,8 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
           onClick={toggleColorMode}
           icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
         />
-        {state.isAuthenticated ? (
+        {state.isAuthenticated && state.user?.member ? (
           <>
-            <IconButton
-              size="lg"
-              variant="ghost"
-              aria-label="open menu"
-              icon={<FiBell />}
-            />
             <Flex alignItems={"center"}>
               <Menu>
                 <MenuButton
@@ -235,9 +259,9 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
                       spacing="1px"
                       ml="2"
                     >
-                      <Text fontSize="sm">Justina Clark</Text>
+                      <Text fontSize="sm">{state.user?.member?.name}</Text>
                       <Text fontSize="xs" color="gray.600">
-                        Admin
+                        {getPlan(state.user?.member!!)}
                       </Text>
                     </VStack>
                     <Box display={{ base: "none", md: "flex" }}>
@@ -245,15 +269,23 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
                     </Box>
                   </HStack>
                 </MenuButton>
-                <MenuList
-                  bg={useColorModeValue("white", "gray.900")}
-                  borderColor={useColorModeValue("gray.200", "gray.700")}
-                >
-                  <MenuItem>Profile</MenuItem>
-                  <MenuItem>Settings</MenuItem>
-                  <MenuItem>Billing</MenuItem>
+                <MenuList bg={menuBg} borderColor={menuBc}>
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/account");
+                    }}
+                  >
+                    Profile
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/settings");
+                    }}
+                  >
+                    Settings
+                  </MenuItem>
                   <MenuDivider />
-                  <MenuItem>Sign out</MenuItem>
+                  <MenuItem onClick={logout}>Sign out</MenuItem>
                 </MenuList>
               </Menu>
             </Flex>
@@ -263,7 +295,9 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
             <Button colorScheme="blue" as={Link} to={"/signup"}>
               Sign up
             </Button>
-            <Button colorScheme="gray">Login</Button>
+            <Button colorScheme="gray" onClick={login}>
+              Login
+            </Button>
           </>
         )}
       </HStack>
@@ -278,57 +312,81 @@ const Layout = () => {
 
   const navigation = useNavigate();
 
-  function refreshIdentity(identity: Identity) {
-    setPrincipal(identity.getPrincipal().toString());
-    const agent = Actor.agentOf(actor);
-    if (!agent || !agent.replaceIdentity) {
-      throw new Error("Agent not found");
-    }
-    agent.replaceIdentity(identity);
-  }
+  const toast = useToast();
+
+  const { state, dispatch } = useAuth();
 
   async function login() {
-    const authClient = await AuthClient.create({
-      idleOptions: {
-        idleTimeout: 1000 * 60 * 30,
-      },
-    });
-    if (!process.env.CANISTER_ID_DAO) {
-      console.error("Project not found");
-      return;
-    }
+    const authClient = await createClient();
     await new Promise((resolve) => {
       authClient.login({
         identityProvider:
           process.env.DFX_NETWORK === "ic"
             ? "https://identity.ic0.app"
-            : `http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:4943`,
+            : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`,
         onSuccess: () => resolve(null),
       });
     });
     const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-    actor = createActor(process.env.CANISTER_ID_DAO, {
-      agent,
-    });
-    refreshIdentity(identity);
-    navigation("/dashboard");
+    actor = await createBackendActor(identity);
+    // Check if member exists
+    const member = await actor.getMemberProfile(identity.getPrincipal());
+    if (member.err) {
+      toast({
+        title: "You don't have an account, kindly sign up",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      authClient.logout();
+      dispatch({
+        type: LOGOUT,
+      });
+      navigation("/signup");
+    } else {
+      toast({
+        title: "Login successful",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      dispatch({
+        type: LOGIN,
+        payload: {
+          principal: identity.getPrincipal(),
+          member: member.ok as Member,
+        },
+      });
+      navigation("/");
+    }
   }
 
   useEffect(() => {
-    async function checkLoggedIn() {
-      const authClient = await AuthClient.create({
-        idleOptions: {
-          idleTimeout: 1000 * 60 * 30,
-        },
-      });
+    async function checkAuthenticated() {
+      const authClient = await createClient();
       if (await authClient.isAuthenticated()) {
-        refreshIdentity(authClient.getIdentity());
-        navigation("/dashboard");
+        const identity = authClient.getIdentity();
+        actor = await createBackendActor(identity);
+        const response = await actor.getMemberProfile(identity.getPrincipal());
+        const member = (response.ok as Member) ?? null;
+        if (!member) {
+          authClient.logout();
+          dispatch({
+            type: LOGOUT,
+          });
+        } else {
+          dispatch({
+            type: LOGIN,
+            payload: {
+              principal: identity.getPrincipal(),
+              member,
+            },
+          });
+        }
       }
     }
-    checkLoggedIn();
-  });
+    checkAuthenticated();
+  }, [dispatch]);
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
@@ -349,7 +407,7 @@ const Layout = () => {
         </DrawerContent>
       </Drawer>
       {/* mobilenav */}
-      <MobileNav onOpen={onOpen} />
+      <MobileNav onOpen={onOpen} login={login} />
       <Box ml={{ base: 0, md: 60 }} p="4">
         <Outlet />
       </Box>

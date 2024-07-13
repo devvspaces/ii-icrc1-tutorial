@@ -1,5 +1,5 @@
 import App from './pages/index';
-import MembersPage from './pages/members';
+import MembersPage, { membersLoader } from './pages/members';
 import CreatePostPage from './pages/new';
 import MemberDetailPage, { memberLoader } from './pages/members/detail';
 import SignUp from './pages/auth/signup';
@@ -7,7 +7,7 @@ import SettingsPage from './pages/billing';
 import ErrorPage from './pages/error-page';
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from './pages/root';
-import ProfilePage, { profileLoader } from './pages/account';
+import ProfilePage from './pages/account';
 
 const router = createBrowserRouter([
   {
@@ -22,7 +22,6 @@ const router = createBrowserRouter([
       {
         path: 'account',
         element: <ProfilePage />,
-        loader: profileLoader,
       },
       {
         path: 'new/post',
@@ -35,6 +34,7 @@ const router = createBrowserRouter([
       {
         path: 'members',
         element: <MembersPage />,
+        loader: membersLoader,
       },
       {
         path: 'members/:id',

@@ -10,7 +10,6 @@ import Nat "mo:base/Nat";
 import Types "types";
 import Vector "mo:vector";
 
-
 actor Blog {
   type Result<A, B> = Result.Result<A, B>;
   type Member = Types.Member;
@@ -25,7 +24,7 @@ actor Blog {
   stable var stableMembers : [(Principal, Member)] = [];
   let members = HashMap.fromIter<Principal, Member>(stableMembers.vals(), 0, Principal.equal, Principal.hash);
 
-  stable var stablePosts: [(Principal, Vector<Post>)] = [];
+  stable var stablePosts : [(Principal, Vector<Post>)] = [];
   let posts = HashMap.fromIter<Principal, Vector<Post>>(stablePosts.vals(), 0, Principal.equal, Principal.hash);
 
   public query func getName() : async Text {
@@ -70,7 +69,7 @@ actor Blog {
     };
   };
 
-  public shared ({ caller }) func register(name: Text, github: Text, bio: Text) : async Result<(), Text> {
+  public shared ({ caller }) func register(name : Text, github : Text, bio : Text) : async Result<(), Text> {
     switch (members.get(caller)) {
       case (null) {
         let member = {
@@ -103,14 +102,15 @@ actor Blog {
         switch (posts.get(caller)) {
           case (null) {};
           case (?postsObj) {
-            switch(member.plan) {
+            let postCount = Vector.size<Post>(postsObj);
+            switch (member.plan) {
               case (#Free) {
-                if (Vector.size<Post>(postsObj) >= 5) {
+                if (postCount >= 5) {
                   return #err("Free plan is limited to 5 posts");
                 };
               };
               case (#Elite) {
-                if (Vector.size<Post>(postsObj) >= 50) {
+                if (postCount >= 50) {
                   return #err("Elite plan is limited to 50 posts");
                 };
               };
@@ -121,6 +121,7 @@ actor Blog {
               Vector.add<Post>(
                 postsObj,
                 {
+                  id = postCount;
                   title = title;
                   content = content;
                   author = caller;
@@ -133,6 +134,7 @@ actor Blog {
               Vector.add<Post>(
                 postsObj,
                 {
+                  id = postCount;
                   title = title;
                   content = content;
                   author = caller;
@@ -145,6 +147,20 @@ actor Blog {
           };
         };
         return #ok();
+      };
+    };
+  };
+
+  public query func getPost(id : Nat, owner : Principal) : async Result<Post, Text> {
+    switch (posts.get(owner)) {
+      case null {
+        return #err("Post not found");
+      };
+      case (?postsObj) {
+        if (id >= Vector.size<Post>(postsObj)) {
+          return #err("Post not found");
+        };
+        return #ok(Vector.get<Post>(postsObj, id));
       };
     };
   };
@@ -165,6 +181,7 @@ actor Blog {
             };
             let post = Vector.get<Post>(postsObj, id);
             let updatedPost = {
+              id = post.id;
               title = post.title;
               content = post.content;
               author = post.author;
@@ -181,7 +198,7 @@ actor Blog {
   };
 
   public query func getPlans() : async [Plan] {
-    [ #Free, #Elite, #Legendary ];
+    [#Free, #Elite, #Legendary];
   };
 
   private func _getPlanCost(plan : Plan) : Nat {

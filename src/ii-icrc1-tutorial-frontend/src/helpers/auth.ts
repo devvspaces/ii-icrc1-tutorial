@@ -3,6 +3,7 @@ import { AuthClient } from "@dfinity/auth-client";
 import { Principal } from "@dfinity/principal";
 import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { Plan } from "./types";
+import { createActor } from "../../../declarations/ii-icrc1-tutorial-backend";
 
 export async function createClient() {
   const authClient = await AuthClient.create({
@@ -13,13 +14,27 @@ export async function createClient() {
   return authClient;
 }
 
-export const AnonymousPrincipal = new AnonymousIdentity().getPrincipal().toString();
+export async function createBackendActor(identity: Identity) {
+  return createActor(process.env.CANISTER_ID_II_ICRC1_TUTORIAL_BACKEND, {
+    agentOptions: {
+      identity,
+    },
+  });
+}
 
-export function refreshIdentity(identity: Identity, actor: Actor, setPrincipal: (principal: Principal) => void) {
+export const AnonymousPrincipal = new AnonymousIdentity()
+  .getPrincipal()
+  .toString();
+
+export function refreshIdentity(
+  identity: Identity,
+  actor: Actor,
+  setPrincipal: (principal: Principal) => void
+) {
   setPrincipal(identity.getPrincipal());
   const agent = Actor.agentOf(actor);
   if (!agent || !agent.replaceIdentity) {
-    throw new Error('Agent not found');
+    throw new Error("Agent not found");
   }
   agent.replaceIdentity(identity);
 }
@@ -39,10 +54,10 @@ export function getPlan(member: Member) {
 export function getPlanColor(plan: Plan) {
   switch (plan) {
     case Plan.Free:
-      return 'gray';
+      return "gray";
     case Plan.Elite:
-      return 'purple';
+      return "purple";
     case Plan.Legendary:
-      return 'orange';
+      return "orange";
   }
 }
