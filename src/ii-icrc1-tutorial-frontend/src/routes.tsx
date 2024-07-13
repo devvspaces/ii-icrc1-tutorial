@@ -3,6 +3,7 @@ import MembersPage from './pages/members';
 import CreatePostPage from './pages/new';
 import MemberDetailPage, { memberLoader } from './pages/members/detail';
 import SignUp from './pages/auth/signup';
+import SettingsPage from './pages/billing';
 import ErrorPage from './pages/error-page';
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from './pages/root';
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: 'new/post',
         element: <CreatePostPage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
       },
       {
         path: 'members',
