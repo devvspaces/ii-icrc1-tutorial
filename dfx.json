@@ -4,9 +4,14 @@
       "main": "src/ii-icrc1-tutorial-backend/main.mo",
       "type": "motoko"
     },
+    "internet-identity": {
+      "type": "pull",
+      "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+    },
     "ii-icrc1-tutorial-frontend": {
       "dependencies": [
-        "ii-icrc1-tutorial-backend"
+        "ii-icrc1-tutorial-backend",
+        "internet-identity"
       ],
       "source": [
         "src/ii-icrc1-tutorial-frontend/dist"
