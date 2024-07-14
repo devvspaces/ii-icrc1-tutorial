@@ -66,3 +66,7 @@ The canister exposes the following methods:
 - `getPlans`: Returns the list of plans.
 
 - `upgradePlan`: Upgrades the plan of the authenticated user. This method requires the user to be authenticated with Internet Identity.
+
+```bash
+dfx canister call ii-icrc1-tutorial-backend set_icrc1_token_canister  "(\"mxzaz-hqaaa-aaaar-qaada-cai\")"
+```
