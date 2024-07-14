@@ -251,10 +251,10 @@ shared ({ caller = installer_ }) actor class Blog() = this {
     };
   };
 
-  private func _updatePlan(caller : Principal, plan : Plan) : async Result<(), Text> {
+  func _updatePlan(caller : Principal, plan : Plan) : async () {
     switch (members.get(caller)) {
       case (null) {
-        return #err("Member not found");
+        return;
       };
       case (?member) {
         let updatedMember = {
@@ -264,7 +264,7 @@ shared ({ caller = installer_ }) actor class Blog() = this {
           plan = plan;
         };
         members.put(caller, updatedMember);
-        return #ok();
+        return;
       };
     };
   };
@@ -312,7 +312,7 @@ shared ({ caller = installer_ }) actor class Blog() = this {
       case (#Legendary) {
         amount := 20;
       };
-      case(_) { };
+      case (_) {};
     };
 
     // Make the icrc1 intercanister transfer call, catching if error'd:
@@ -326,7 +326,11 @@ shared ({ caller = installer_ }) actor class Blog() = this {
     switch (response) {
       case (#ok(transferResult)) {
         switch (transferResult) {
-          case (#Ok index) #ok("", #Completed({ timestampNs = Time.now(); index }));
+          case (#Ok index) {
+            // Update member plan
+            let _ = _updatePlan(caller, plan);
+            return #ok("", #Completed({ timestampNs = Time.now(); index }));
+          };
           case (#Err transferErr) #err(
             "The icrc1 transfer call could not be completed as requested.",
             #Failed(#TransferErr(transferErr)),
@@ -338,6 +342,6 @@ shared ({ caller = installer_ }) actor class Blog() = this {
         #Failed(kind),
       );
     };
-    
+
   };
 };

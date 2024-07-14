@@ -14,19 +14,24 @@ import {
   Button,
   Center,
   CircularProgress,
+  useToast,
 } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
 import withAuth from "../lib/withAuth";
-import { useAuth } from "../lib/AuthContext";
-import { getPlan } from "../helpers/auth";
+import { LOGIN, useAuth } from "../lib/AuthContext";
+import { createBackendActor, createClient, getPlan } from "../helpers/auth";
 import { Plan } from "../helpers/types";
 import {
+  decodeIcrcAccount,
   IcrcLedgerCanister,
   IcrcMetadataResponseEntries,
   IcrcTokenMetadataResponse,
 } from "@dfinity/ledger-icrc";
 import { createLedgerCanister } from "../helpers/ledger";
 import { useEffect, useState } from "react";
+import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
+import { ActorSubclass } from "@dfinity/agent";
+import { _SERVICE } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 
 interface Props {
   children: React.ReactNode;
@@ -50,11 +55,13 @@ function PriceWrapper(props: Props) {
 }
 
 function Page() {
-  const { state } = useAuth();
+  const { state, dispatch } = useAuth();
   const [ledger, setLedger] = useState<IcrcLedgerCanister | null>(null);
+  const [actor, setActor] = useState<ActorSubclass<_SERVICE> | null>(null);
   const [metadata, setMetadata] = useState<IcrcTokenMetadataResponse | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const plan = getPlan(state.user?.member!!)!!;
 
@@ -65,15 +72,21 @@ function Page() {
   const bg = useColorModeValue("gray.50", "gray.700");
   const mostP = useColorModeValue("red.300", "red.700");
   const mostPC = useColorModeValue("gray.900", "gray.300");
+  const boxBg = useColorModeValue("gray.50", "gray.700");
 
   useEffect(() => {
     async function setupLedger() {
       const ledger = await createLedgerCanister();
       const metadata = await ledger.metadata({});
-      console.log(metadata);
       setLedger(ledger);
       setMetadata(metadata);
     }
+    async function setupActor() {
+      const client = await createClient();
+      const identity = client.getIdentity();
+      setActor(await createBackendActor(identity));
+    }
+    setupActor();
     setupLedger();
   }, []);
 
@@ -85,6 +98,99 @@ function Page() {
       }
     }
     return "nil";
+  }
+
+  function getTokenDecimals() {
+    if (!metadata) throw new Error("No metadata");
+    for (const value of metadata) {
+      if (value[0] === IcrcMetadataResponseEntries.DECIMALS) {
+        return parseInt((value[1] as any).Nat);
+      }
+    }
+    throw new Error("No decimals");
+  }
+
+  const toast = useToast();
+
+  const prices = {
+    [Plan.Free]: 0,
+    [Plan.Elite]: 10,
+    [Plan.Legendary]: 20,
+  };
+
+  async function getSubAccount(): Promise<string> {
+    if (!actor) throw new Error("No actor");
+    const response = await actor.get_account_address();
+    return response;
+  }
+
+  async function transferToSubAccount(plan: Plan) {
+    if (!ledger) return;
+    if (!actor) throw new Error("No actor");
+    const toIcrcAccount = decodeIcrcAccount(await getSubAccount());
+    console.log(
+      "BALANCE",
+      await ledger.balance({
+        owner: state.user?.principal!!,
+      })
+    );
+    try {
+      setIsLoading(true);
+      const transfer_result = await ledger.transfer({
+        to: {
+          owner: toIcrcAccount.owner,
+          subaccount: toIcrcAccount.subaccount
+            ? [toIcrcAccount.subaccount]
+            : [],
+        },
+        amount: BigInt(prices[plan] * Math.pow(10, getTokenDecimals())),
+      });
+      console.log(transfer_result);
+      setIsLoading(false);
+
+      // Make payment
+      const response = await actor.transferFromSubAccountToMain({
+        [plan]: null,
+      });
+      console.log("::PAYMENT::", response);
+      if (response.ok) {
+        toast({
+          title: "Payment successful",
+          status: "success",
+          position: "top",
+          duration: 5000,
+          isClosable: true,
+        });
+        dispatch({
+          type: LOGIN,
+          payload: {
+            principal: state.user?.principal,
+            member: {
+              ...state.user?.member,
+              plan: { [plan]: null },
+            },
+          },
+        });
+      } else {
+        toast({
+          title: "Error making payment",
+          status: "error",
+          position: "top",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (e) {
+      setIsLoading(false);
+      console.error(e);
+      toast({
+        title: "Error making payment",
+        status: "error",
+        position: "top",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   }
 
   return (
@@ -120,11 +226,7 @@ function Page() {
                   </Text>
                 </HStack>
               </Box>
-              <VStack
-                bg={bg}
-                py={4}
-                borderBottomRadius={"xl"}
-              >
+              <VStack bg={bg} py={4} borderBottomRadius={"xl"}>
                 <List spacing={3} textAlign="start" px={12}>
                   <ListItem>
                     <ListIcon as={FaCheckCircle} color="green.500" />
@@ -144,7 +246,7 @@ function Page() {
                     w="full"
                     colorScheme="blue"
                     variant="outline"
-                    isDisabled={isFree}
+                    isDisabled={isFree || isElite || isLegendary}
                   >
                     {isFree ? "Current Plan" : "-"}
                   </Button>
@@ -186,11 +288,7 @@ function Page() {
                     </Text>
                   </HStack>
                 </Box>
-                <VStack
-                  bg={useColorModeValue("gray.50", "gray.700")}
-                  py={4}
-                  borderBottomRadius={"xl"}
-                >
+                <VStack bg={boxBg} py={4} borderBottomRadius={"xl"}>
                   <List spacing={3} textAlign="start" px={12}>
                     <ListItem>
                       <ListIcon as={FaCheckCircle} color="green.500" />
@@ -206,7 +304,15 @@ function Page() {
                     </ListItem>
                   </List>
                   <Box w="80%" pt={7}>
-                    <Button w="full" colorScheme="blue" isDisabled={isElite}>
+                    <Button
+                      w="full"
+                      colorScheme="blue"
+                      isDisabled={isElite || isLegendary}
+                      onClick={async () => {
+                        await transferToSubAccount(Plan.Elite);
+                      }}
+                      isLoading={isLoading}
+                    >
                       {isElite ? "Current Plan" : isLegendary ? "-" : "Upgrade"}
                     </Button>
                   </Box>
@@ -227,11 +333,7 @@ function Page() {
                   </Text>
                 </HStack>
               </Box>
-              <VStack
-                bg={useColorModeValue("gray.50", "gray.700")}
-                py={4}
-                borderBottomRadius={"xl"}
-              >
+              <VStack bg={boxBg} py={4} borderBottomRadius={"xl"}>
                 <List spacing={3} textAlign="start" px={12}>
                   <ListItem>
                     <ListIcon as={FaCheckCircle} color="green.500" />
@@ -252,6 +354,10 @@ function Page() {
                     colorScheme="blue"
                     variant="outline"
                     isDisabled={isLegendary}
+                    onClick={async () => {
+                      await transferToSubAccount(Plan.Legendary);
+                    }}
+                    isLoading={isLoading}
                   >
                     {isLegendary ? "Current Plan" : "Upgrade"}
                   </Button>
