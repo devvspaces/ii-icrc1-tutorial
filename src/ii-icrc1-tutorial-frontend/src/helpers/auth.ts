@@ -1,10 +1,31 @@
-import { Actor, AnonymousIdentity, Identity } from "@dfinity/agent";
+import { Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { Principal } from "@dfinity/principal";
 import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { Plan } from "./types";
 import { createActor } from "../../../declarations/ii-icrc1-tutorial-backend";
 
+
+/**
+ * Get the identity provider URL
+ * @see https://github.com/dfinity/examples/blob/master/motoko/auth_client_demo/src/auth_client_demo_assets/react/use-auth-client.jsx
+ */
+export const getIdentityProvider = () => {
+  if (process.env.DFX_NETWORK === "ic") {
+    return "https://identity.ic0.app";
+  }
+
+  // Safari does not support localhost subdomains
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isSafari) {
+    return `http://localhost:4943/?canisterId=${process.env.CANISTER_ID_INTERNET_IDENTITY}`;
+  }
+  
+  return `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`;
+};
+
+/**
+ * Create an auth client
+ */
 export async function createClient() {
   const authClient = await AuthClient.create({
     idleOptions: {
@@ -14,6 +35,10 @@ export async function createClient() {
   return authClient;
 }
 
+/**
+ * Create a new authenticated backend actor
+ * @param identity
+ */
 export async function createBackendActor(identity: Identity) {
   return createActor(process.env.CANISTER_ID_II_ICRC1_TUTORIAL_BACKEND, {
     agentOptions: {
@@ -22,23 +47,9 @@ export async function createBackendActor(identity: Identity) {
   });
 }
 
-export const AnonymousPrincipal = new AnonymousIdentity()
-  .getPrincipal()
-  .toString();
-
-export function refreshIdentity(
-  identity: Identity,
-  actor: Actor,
-  setPrincipal: (principal: Principal) => void
-) {
-  setPrincipal(identity.getPrincipal());
-  const agent = Actor.agentOf(actor);
-  if (!agent || !agent.replaceIdentity) {
-    throw new Error("Agent not found");
-  }
-  agent.replaceIdentity(identity);
-}
-
+/**
+ * Convert plan candid variant to enum
+ */
 export function getPlan(member: Member) {
   if ((member.plan as any).Free === null) {
     return Plan.Free;
@@ -51,6 +62,9 @@ export function getPlan(member: Member) {
   }
 }
 
+/**
+ * Get unique color for plan
+ */
 export function getPlanColor(plan: Plan) {
   switch (plan) {
     case Plan.Free:

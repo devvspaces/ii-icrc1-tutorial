@@ -1,20 +1,3 @@
-// import { Box, Center, Heading, Text } from "@chakra-ui/react";
-
-// export default function ErrorPage() {
-//   const error: any = useRouteError();
-//   return (
-//     <Center id="error-page" mt={"7rem"}>
-//       <Box textAlign={"center"}>
-//         <Heading mb={5}>Oops!</Heading>
-//         <Text>Sorry, an unexpected error has occurred.</Text>
-//         <Text>
-//           <i>{error.statusText || error.message}</i>
-//         </Text>
-//       </Box>
-//     </Center>
-//   );
-// }
-
 import { Box, Center, Flex, Heading, Text } from "@chakra-ui/react";
 import { CloseIcon } from "@chakra-ui/icons";
 import { useRouteError } from "react-router-dom";

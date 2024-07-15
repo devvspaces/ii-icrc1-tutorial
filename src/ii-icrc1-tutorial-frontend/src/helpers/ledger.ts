@@ -2,8 +2,10 @@ import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
 import { createAgent } from "@dfinity/utils";
 import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { createClient } from "./auth";
-import { Principal } from "@dfinity/principal";
 
+/**
+ * Create an ICRC ledger canister
+ */
 export async function createLedgerCanister() {
   const client = await createClient();
 

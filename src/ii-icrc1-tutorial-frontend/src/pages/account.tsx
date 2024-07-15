@@ -15,7 +15,6 @@ import { getPlan } from "../helpers/auth";
 import ProfileCard from "../components/ProfileCard";
 import PostCard from "../components/PostCard";
 import { FaPlus } from "react-icons/fa";
-import { PostStatus } from "../helpers/types";
 import withAuth from "../lib/withAuth";
 import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { Post } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";

@@ -12,7 +12,7 @@ import {
   Member,
   Post,
 } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
-import { getPlan, getPlanColor } from "../helpers/auth";
+import { getPlan } from "../helpers/auth";
 import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { Principal } from "@dfinity/principal";

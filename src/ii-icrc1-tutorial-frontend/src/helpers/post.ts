@@ -1,7 +1,10 @@
 import { Post } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { PostStatus } from "./types";
 
-
+/**
+ * Get post status from candid variant
+ * @param post
+ */
 export function getPostStatus(post: Post) {
   if ((post.status as any).Draft === null) {
     return PostStatus.Draft;

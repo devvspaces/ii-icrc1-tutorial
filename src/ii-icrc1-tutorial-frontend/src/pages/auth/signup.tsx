@@ -1,14 +1,9 @@
-"use client";
-
 import {
   Flex,
   Box,
   FormControl,
   FormLabel,
   Input,
-  InputGroup,
-  HStack,
-  InputRightElement,
   Stack,
   Button,
   Heading,
@@ -19,12 +14,11 @@ import {
   FormErrorMessage,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { ii_icrc1_tutorial_backend } from "../../../../declarations/ii-icrc1-tutorial-backend";
-import { createBackendActor, createClient } from "../../helpers/auth";
+import { createBackendActor, createClient, getIdentityProvider } from "../../helpers/auth";
 import { Member } from "../../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 import { LOGIN, useAuth } from "../../lib/AuthContext";
 
@@ -50,18 +44,19 @@ export default function Page() {
     onSubmit: async (values, { setFieldError }) => {
       try {
         setIsLoading(true);
+
+        // Authenticate the user to get the identity
         const authClient = await createClient();
         await new Promise((resolve) => {
           authClient.login({
-            identityProvider:
-              process.env.DFX_NETWORK === "ic"
-                ? "https://identity.ic0.app"
-                : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`,
+            identityProvider: getIdentityProvider(),
             onSuccess: () => resolve(null),
           });
         });
         const identity = authClient.getIdentity();
         actor = await createBackendActor(identity);
+
+        // Register the user
         const response = (await actor.register(
           values.name,
           values.github,

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Box,
   Stack,
@@ -29,7 +27,6 @@ import {
 } from "@dfinity/ledger-icrc";
 import { createLedgerCanister } from "../helpers/ledger";
 import { useEffect, useState } from "react";
-import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { ActorSubclass } from "@dfinity/agent";
 import { _SERVICE } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 

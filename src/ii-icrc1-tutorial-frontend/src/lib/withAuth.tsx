@@ -1,20 +1,20 @@
 import { LOGIN, LOGOUT, useAuth } from "./AuthContext";
 import { useEffect } from "react";
-import {
-  createBackendActor,
-  createClient,
-  refreshIdentity,
-} from "../helpers/auth";
+import { createBackendActor, createClient } from "../helpers/auth";
 import { useNavigate } from "react-router-dom";
 import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
-import {
-  createActor,
-  ii_icrc1_tutorial_backend,
-} from "../../../declarations/ii-icrc1-tutorial-backend";
+import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { useToast } from "@chakra-ui/react";
 
 let actor = ii_icrc1_tutorial_backend;
 
+/**
+ * Higher order component to check if user is authenticated
+ *
+ * This ensures that the user is authenticated before rendering the component
+ * If a user is authenticated but not a member, they are logged out
+ * @param Component
+ */
 function withAuth(Component: any) {
   return function WithAuth(props: any) {
     const { state, dispatch } = useAuth();

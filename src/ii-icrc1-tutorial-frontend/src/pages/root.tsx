@@ -28,26 +28,19 @@ import {
   FiHome,
   FiTrendingUp,
   FiCompass,
-  FiStar,
   FiSettings,
   FiMenu,
-  FiBell,
   FiChevronDown,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
   Link,
   Outlet,
-  redirect,
   useLocation,
   useNavigate,
-  useNavigation,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { AuthClient } from "@dfinity/auth-client";
-import { Actor, AnonymousIdentity, HttpAgent, Identity } from "@dfinity/agent";
 import {
-  createActor,
   ii_icrc1_tutorial_backend,
 } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { LOGIN, LOGOUT, useAuth } from "../lib/AuthContext";
@@ -55,8 +48,8 @@ import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import {
   createBackendActor,
   createClient,
+  getIdentityProvider,
   getPlan,
-  refreshIdentity,
 } from "../helpers/auth";
 import { Member } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 
@@ -308,22 +301,21 @@ const MobileNav = ({ onOpen, login, ...rest }: MobileProps) => {
 const Layout = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const [principal, setPrincipal] = useState<string | null>(null);
-
   const navigation = useNavigate();
 
   const toast = useToast();
 
-  const { state, dispatch } = useAuth();
+  const { dispatch } = useAuth();
 
+  /**
+   * Using the Internet Identity to authenticate the user
+   * Checks if authenticated user is already registered
+   */
   async function login() {
     const authClient = await createClient();
     await new Promise((resolve) => {
       authClient.login({
-        identityProvider:
-          process.env.DFX_NETWORK === "ic"
-            ? "https://identity.ic0.app"
-            : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`,
+        identityProvider: getIdentityProvider(),
         onSuccess: () => resolve(null),
       });
     });
@@ -361,6 +353,9 @@ const Layout = () => {
     }
   }
 
+  /**
+   * Check if user is authenticated else logout
+   */
   useEffect(() => {
     async function checkAuthenticated() {
       const authClient = await createClient();

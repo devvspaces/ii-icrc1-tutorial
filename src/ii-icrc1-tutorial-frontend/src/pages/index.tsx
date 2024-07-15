@@ -2,7 +2,7 @@ import { Box, Center, CircularProgress, Flex, useToast } from "@chakra-ui/react"
 import PostCard from "../components/PostCard";
 import { ii_icrc1_tutorial_backend } from "../../../declarations/ii-icrc1-tutorial-backend";
 import { useEffect, useState } from "react";
-import { Post, PostWithAuthor } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
+import { PostWithAuthor } from "../../../declarations/ii-icrc1-tutorial-backend/ii-icrc1-tutorial-backend.did";
 
 export default function Page() {
   const toast = useToast();
@@ -35,9 +35,9 @@ export default function Page() {
       )
     }
       <Flex wrap={"wrap"} align={"center"} justify={"center"} gap={6}>
-          {posts.map((post) => (
+          {posts.map((post, idx) => (
           <PostCard
-            key={post.post.id}
+            key={idx}
             id={post.post.id.toString()}
             owner={post.post.author}
             author={{
