@@ -118,6 +118,7 @@ function Page() {
   async function getSubAccount(): Promise<string> {
     if (!actor) throw new Error("No actor");
     const response = await actor.get_account_address();
+    console.log("Account Address", response);
     return response;
   }
 
@@ -142,7 +143,6 @@ function Page() {
         },
         amount: BigInt(prices[plan] * Math.pow(10, getTokenDecimals())),
       });
-      console.log(transfer_result);
       setIsLoading(false);
 
       // Make payment
@@ -179,9 +179,8 @@ function Page() {
       }
     } catch (e) {
       setIsLoading(false);
-      console.error(e);
       toast({
-        title: "Error making payment",
+        title: `Error making payment: ${e.errorType}`,
         status: "error",
         position: "top",
         duration: 5000,

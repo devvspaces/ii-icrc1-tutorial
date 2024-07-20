@@ -320,6 +320,7 @@ const Layout = () => {
       });
     });
     const identity = authClient.getIdentity();
+    console.log("Principal", identity.getPrincipal().toText());
     actor = await createBackendActor(identity);
     // Check if member exists
     const member = await actor.getMemberProfile(identity.getPrincipal());
